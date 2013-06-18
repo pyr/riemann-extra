@@ -1,6 +1,6 @@
 (ns org.spootnik.riemann.python
   "Helper functions to work with input from python-riemann-wrapper"
-  (:require [riemann.streams :refer [tagged sdo combine project*
+  (:require [riemann.streams :refer [tagged sdo combine project* with
                                      where* where by adjust smap]]
             [clojure.string :as s]))
 
