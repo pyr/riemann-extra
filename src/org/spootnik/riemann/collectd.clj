@@ -60,6 +60,23 @@
                                            (* 100))))
                            (sdo ~@children)))))))
 
+(defmacro mem-stream
+  [& children]
+  `(sdo
+    (where* (comp (partial = "memory") :plugin)
+            (by [:host]
+                (project* [(comp (partial = "used") :type_instance)
+                           (comp (partial = "free") :type_instance)]
+                          (combine
+                           (fn [[used# free#]]
+                             (assoc used#
+                               :service "mem pct"
+                               :metric (-> (:metric  used#)
+                                           (/ (+ (:metric used#)
+                                                 (:metric free#)))
+                                           (* 100))))
+                           (sdo ~@children)))))))
+
 (defmacro cpu-stream
   [& children]
   `(sdo
