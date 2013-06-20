@@ -66,13 +66,17 @@
     (where* (comp (partial = "memory") :plugin)
             (by [:host]
                 (project* [(comp (partial = "used") :type_instance)
+                           (comp (partial = "cached") :type_instance)
+                           (comp (partial = "buffered") :type_instance)
                            (comp (partial = "free") :type_instance)]
                           (combine
-                           (fn [[used# free#]]
+                           (fn [[used# cached# buf# free#]]
                              (assoc used#
                                :service "mem pct"
                                :metric (-> (:metric  used#)
                                            (/ (+ (:metric used#)
+                                                 (:metric cached#)
+                                                 (:metric buf#)
                                                  (:metric free#)))
                                            (* 100))))
                            (sdo ~@children)))))))
