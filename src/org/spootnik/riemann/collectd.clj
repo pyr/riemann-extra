@@ -81,6 +81,25 @@
                                            (* 100))))
                            (sdo ~@children)))))))
 
+(defmacro swap-stream
+  [& children]
+  `(sdo
+    (where* (comp (partial = "swap") :plugin)
+            (by [:host]
+                (project* [(comp (partial = "used") :type_instance)
+                           (comp (partial = "cached") :type_instance)
+                           (comp (partial = "free") :type_instance)]
+                          (combine
+                           (fn [[used# cached# free#]]
+                             (assoc used#
+                               :service "swap pct"
+                               :metric (-> (:metric  used#)
+                                           (/ (+ (:metric used#)
+                                                 (:metric cached#)
+                                                 (:metric free#)))
+                                           (* 100))))
+                           (sdo ~@children)))))))
+
 (defmacro cpu-stream
   [& children]
   `(sdo
