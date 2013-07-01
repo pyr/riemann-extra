@@ -14,7 +14,7 @@
   [thresholds event]
   (if-let [thresholds (get thresholds (:service event))]
     (if (sequential? thresholds)
-      (some (partial find-specific-threshold) thresholds)
+      (some (partial find-specific-threshold event) thresholds)
       thresholds)))
 
 (defn threshold-check-builder
