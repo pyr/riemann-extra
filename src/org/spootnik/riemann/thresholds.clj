@@ -23,7 +23,7 @@
 
    The output function does not process events with no metrics"
   [thresholds]
-  (fn [{:keys [metric service] :as event}]
+  (fn [{:keys [metric] :as event}]
     (if-let [{:keys [warning critical invert]}
              (if metric (find-threshold thresholds event))]
       (assoc event :state
@@ -39,6 +39,5 @@
    state based on its metric."
   [thresholds]
   (->> thresholds
-       (map (partial reduce merge {}))
        (map threshold-check-builder)
        (apply comp)))
