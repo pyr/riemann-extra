@@ -13,7 +13,7 @@
 (defn find-threshold
   [thresholds event]
   (if-let [thresholds (get thresholds (:service event))]
-    (if-let [(sequential? thresholds)]
+    (if (sequential? thresholds)
       (some (partial find-specific-threshold) thresholds)
       thresholds)))
 
