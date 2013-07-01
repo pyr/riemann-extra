@@ -38,10 +38,7 @@
    and :critical values, yield a function that will adapt an event's
    state based on its metric."
   [thresholds]
-  (let [sorter (comp :invert val)]
-    (->> thresholds
-         (sort-by sorter)
-         (partition-by sorter)
-         (map (partial reduce merge {}))
-         (map threshold-check-builder)
-         (apply comp))))
+  (->> thresholds
+       (map (partial reduce merge {}))
+       (map threshold-check-builder)
+       (apply comp)))
