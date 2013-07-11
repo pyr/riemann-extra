@@ -17,7 +17,7 @@
       (some (partial find-specific-threshold event) thresholds)
       thresholds)))
 
-(defn threshold-check-builder
+(defn threshold-check
   "Given a list of standard or inverted thresholds, yield
    a function that will adapt an inputs state.
 
@@ -32,12 +32,3 @@
               ((if invert <= >) metric warning)  "warning"
               :else                  "ok"))
       event)))
-
-(defn threshold-check
-  "Given a map of threshold associating a service name with :warning
-   and :critical values, yield a function that will adapt an event's
-   state based on its metric."
-  [thresholds]
-  (->> thresholds
-       (map threshold-check-builder)
-       (apply comp)))
