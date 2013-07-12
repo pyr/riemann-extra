@@ -24,11 +24,13 @@
    The output function does not process events with no metrics"
   [thresholds]
   (fn [{:keys [metric] :as event}]
-    (if-let [{:keys [warning critical invert]}
+    (if-let [{:keys [warning critical invert exact]}
              (if metric (find-threshold thresholds event))]
       (assoc event :state
              (cond
+              (and exact (not= metric exact))    "critical"
+              (and exact (= metric exact))       "ok"
               ((if invert <= >) metric critical) "critical"
               ((if invert <= >) metric warning)  "warning"
-              :else                  "ok"))
+              :else                              "ok"))
       event)))
