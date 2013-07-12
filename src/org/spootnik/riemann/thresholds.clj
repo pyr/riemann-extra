@@ -28,8 +28,8 @@
              (if metric (find-threshold thresholds event))]
       (assoc event :state
              (cond
-              (and exact (not= metric exact))    "critical"
-              (and exact (= metric exact))       "ok"
+              (and exact (not= (double metric) (double exact))) "critical"
+              (and exact (= (double metric) (double exact)))    "ok"
               ((if invert <= >) metric critical) "critical"
               ((if invert <= >) metric warning)  "warning"
               :else                              "ok"))
