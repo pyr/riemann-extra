@@ -30,7 +30,7 @@
              (cond
               (and exact (not= (double metric) (double exact))) "critical"
               (and exact (= (double metric) (double exact)))    "ok"
-              ((if invert <= >) metric critical) "critical"
-              ((if invert <= >) metric warning)  "warning"
+              (and critical ((if invert <= >) metric critical)) "critical"
+              (and warning ((if invert <= >) metric warning))  "warning"
               :else                              "ok"))
       event)))
