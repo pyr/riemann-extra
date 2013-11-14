@@ -9,6 +9,7 @@
    "cpu-nice" {:warning 50 :critical 20}   
    "cpu-idle" {:warning 50 :critical 20 :invert true}
    "cpu-idle3" {:warning 50 :critical 20 :invert true}
+   "cpu-idle4" {}
    "cpu-steal" {:warning 50 :critical 20}})
 
 (deftest forward-threshold-test
@@ -22,6 +23,8 @@
              (testfn {:service "cpu-idle" :metric 0})))
       (is (= {:service "cpu-idle" :metric 40 :state "warning"}
              (testfn {:service "cpu-idle" :metric 40})))
+      (is (= {:service "cpu-idle4" :metric 20 :state "ok"}
+             (testfn {:service "cpu-idle4" :metric 20})))
       (is (= {:service "foo"}
              (testfn {:service "foo"})))
       (is (= {:service "foo" :metric 2}
