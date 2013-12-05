@@ -11,9 +11,15 @@
    match-host    (and (= match-host host) threshold)
    match-default threshold))
 
+(defn match-threshold
+  [{:keys [service]} [pattern payload]]
+  (when (re-matches pattern service)
+    payload))
+
 (defn find-threshold
-  [thresholds event]
-  (if-let [thresholds (get thresholds (:service event))]
+  [thresholds re-patterns event]
+  (if-let [thresholds (or (get thresholds (:service event))
+                          (some (partial match-threshold event) re-patterns))]
     (if (sequential? thresholds)
       (some (partial find-specific-threshold event) thresholds)
       thresholds)))
@@ -24,16 +30,17 @@
 
    The output function does not process events with no metrics"
   [thresholds]
-  (fn [{:keys [metric tags] :as event}]
-    (if-let [{:keys [warning critical invert exact add-tags]}
-             (if metric (find-threshold thresholds event))]
-      (assoc event
-        :tags (union (set tags) (set add-tags))
-        :state
-        (cond
-         (and exact (not= (double metric) (double exact))) "critical"
-         (and exact (= (double metric) (double exact)))    "ok"
-         ((if invert <= >) metric critical) "critical"
-         ((if invert <= >) metric warning)  "warning"
-         :else                              "ok"))
-      event)))
+  (let [re-patterns (filter (complement (comp string? key)) thresholds)]
+    (fn [{:keys [metric tags] :as event}]
+      (if-let [{:keys [warning critical invert exact add-tags]}
+               (if metric (find-threshold thresholds re-patterns event))]
+        (assoc event
+          :tags (union (set tags) (set add-tags))
+          :state
+          (cond
+           (and exact (not= (double metric) (double exact))) "critical"
+           (and exact (= (double metric) (double exact)))    "ok"
+           ((if invert <= >) metric critical) "critical"
+           ((if invert <= >) metric warning)  "warning"
+           :else                              "ok"))
+        event))))
