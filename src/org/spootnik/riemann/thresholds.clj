@@ -38,6 +38,7 @@
           :tags (union (set tags) (set add-tags))
           :state
           (cond
+           (nil? metric)                       "unknown"
            (and exact (not= (double metric) (double exact))) "critical"
            (and exact (= (double metric) (double exact)))    "ok"
            ((if invert <= >) metric critical) "critical"
