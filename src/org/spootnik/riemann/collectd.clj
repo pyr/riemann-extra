@@ -97,7 +97,7 @@
                                                   (:metric cached#)
                                                   (:metric free#)))
                                             (* 100)))))
-                          ~@chidren)))))
+                          ~@children)))))
 
 (defmacro cpu-stream
   [& children]
