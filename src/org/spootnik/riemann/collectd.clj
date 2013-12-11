@@ -119,9 +119,9 @@
   [& children]
   `(where* (fn [event#]
              (re-find #"^GenericJMX-(.*)\.memory" (:service event#)))
-           (smap (fn [{:keys [service] :as event}]
-                   (assoc event :service
-                          (s/replace service #"GenericJMX-(.*)\.memory.*$" "$1")))
+           (smap (fn [{:keys [service#] :as event#}]
+                   (assoc event# :service
+                          (s/replace service# #"GenericJMX-(.*)\.memory.*$" "$1")))
                  (by [:host :plugin_instance]
                      (project* [(comp (partial = "nonheapused")
                                       :type_instance)
