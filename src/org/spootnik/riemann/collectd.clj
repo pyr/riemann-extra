@@ -59,8 +59,8 @@
                                               (/ (+ (:metric used#)
                                                     (:metric free#)))
                                               (* 100)))
-                                (catch Exception e
-                                  (error e "cannot compute df pct for " used# free#)
+                                (catch Exception e#
+                                  (error e# "cannot compute df pct for " used# free#)
                                   nil))))
                           ~@children)))))
 
@@ -84,8 +84,8 @@
                                                     (:metric buf#)
                                                     (:metric free#)))
                                               (* 100)))
-                                (catch Exception e
-                                  (error e "cannot compute mem pct for " used# cached# buf# free#)
+                                (catch Exception e#
+                                  (error e# "cannot compute mem pct for " used# cached# buf# free#)
                                   nil))))
                           ~@children)))))
 
@@ -107,8 +107,8 @@
                                                     (:metric cached#)
                                                     (:metric free#)))
                                               (* 100)))
-                                (catch Exception e
-                                  (error e "cannot compute swap pct for " used# cached# free#)
+                                (catch Exception e#
+                                  (error e# "cannot compute swap pct for " used# cached# free#)
                                   nil))))
                           ~@children)))))
 
@@ -149,8 +149,8 @@
                                         :metric (-> (:metric used#)
                                                     (/ (:metric max#))
                                                     (* 100)))
-                                      (catch Exception e
-                                        (error e "cannot compute nonheap mem pct for " used# max#)
+                                      (catch Exception e#
+                                        (error e# "cannot compute nonheap mem pct for " used# max#)
                                         nil))))
                                 ~@children))
                      (project* [(comp (partial = "heapused") :type_instance)
@@ -164,8 +164,8 @@
                                         :metric (-> (:metric used#)
                                                     (/ (:metric max#))
                                                     (* 100)))
-                                      (catch Exception e
-                                        (error e "cannot compute heap mem pct for " used# max#)
+                                      (catch Exception e#
+                                        (error e# "cannot compute heap mem pct for " used# max#)
                                         nil))))
                                 ~@children))))))
 
