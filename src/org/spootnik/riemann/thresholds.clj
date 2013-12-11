@@ -2,7 +2,7 @@
  "A common riemann use case: changing event states based
   on threshold lookups"
  (:require [clojure.set           :refer [union]]
-           [clojure.tools.logging :refer [warn]]))
+           [clojure.tools.logging :refer [warn error]]))
 
 (defn find-specific-threshold
   [{:keys [host tags]}
@@ -48,4 +48,4 @@
              :else                              "ok"))
           event)
         (catch Exception e
-          (warn "threshold-check failed for " event))))))
+          (error e "threshold-check failed for " event))))))
