@@ -1,8 +1,7 @@
 (ns org.spootnik.riemann.collectd
   "Helper functions to work with input from collectd"
-  (:require [riemann.streams :refer [tagged sdo combine project*
-                                     where* where by adjust smap]]
-            [clojure.string :as s]))
+  (:require [riemann.streams :refer [tagged sdo project* where* by smap]]
+            [clojure.string  :as s]))
 
 (def default-services
   [{:service "conntrack/conntrack" :rewrite "conntrack"}
@@ -44,108 +43,110 @@
 
 (defmacro df-stream
   [& children]
-  `(sdo
-    (where* (comp (partial = "df") :plugin)
-            (by [:host :plugin_instance]
-                (project* [(comp (partial = "used") :type_instance)
-                           (comp (partial = "free") :type_instance)]
-                          (combine
-                           (fn [[used# free#]]
-                             (assoc used#
-                               :service (format "df %s pct"
-                                                (:plugin_instance used#))
-                               :metric (-> (:metric  used#)
-                                           (/ (+ (:metric used#)
-                                                 (:metric free#)))
-                                           (* 100))))
-                           (sdo ~@children)))))))
+  `(where* (comp (partial = "df") :plugin)
+           (by [:host :plugin_instance]
+               (project* [(comp (partial = "used") :type_instance)
+                          (comp (partial = "free") :type_instance)]
+                         (smap
+                          (fn [[used# free#]]
+                            (when (and used# free#)
+                              (assoc used#
+                                :service (format "df %s pct"
+                                                 (:plugin_instance used#))
+                                :metric (-> (:metric  used#)
+                                            (/ (+ (:metric used#)
+                                                  (:metric free#)))
+                                            (* 100)))))
+                          ~@children)))))
 
 (defmacro mem-stream
   [& children]
-  `(sdo
-    (where* (comp (partial = "memory") :plugin)
-            (by [:host]
-                (project* [(comp (partial = "used") :type_instance)
-                           (comp (partial = "cached") :type_instance)
-                           (comp (partial = "buffered") :type_instance)
-                           (comp (partial = "free") :type_instance)]
-                          (combine
-                           (fn [[used# cached# buf# free#]]
-                             (assoc used#
-                               :service "mem pct"
-                               :metric (-> (:metric  used#)
-                                           (/ (+ (:metric used#)
-                                                 (:metric cached#)
-                                                 (:metric buf#)
-                                                 (:metric free#)))
-                                           (* 100))))
-                           (sdo ~@children)))))))
+  `(where* (comp (partial = "memory") :plugin)
+           (by [:host]
+               (project* [(comp (partial = "used") :type_instance)
+                          (comp (partial = "cached") :type_instance)
+                          (comp (partial = "buffered") :type_instance)
+                          (comp (partial = "free") :type_instance)]
+                         (smap
+                          (fn [[used# cached# buf# free#]]
+                            (when (and used# cached# buf# free#)
+                              (assoc used#
+                                :service "mem pct"
+                                :metric (-> (:metric  used#)
+                                            (/ (+ (:metric used#)
+                                                  (:metric cached#)
+                                                  (:metric buf#)
+                                                  (:metric free#)))
+                                            (* 100)))))
+                          ~@children)))))
 
 (defmacro swap-stream
   [& children]
-  `(sdo
-    (where* (comp (partial = "swap") :plugin)
-            (by [:host]
-                (project* [(comp (partial = "used") :type_instance)
-                           (comp (partial = "cached") :type_instance)
-                           (comp (partial = "free") :type_instance)]
-                          (combine
-                           (fn [[used# cached# free#]]
-                             (assoc used#
-                               :service "swap pct"
-                               :metric (-> (:metric  used#)
-                                           (/ (+ (:metric used#)
-                                                 (:metric cached#)
-                                                 (:metric free#)))
-                                           (* 100))))
-                           (sdo ~@children)))))))
+  `(where* (comp (partial = "swap") :plugin)
+           (by [:host]
+               (project* [(comp (partial = "used") :type_instance)
+                          (comp (partial = "cached") :type_instance)
+                          (comp (partial = "free") :type_instance)]
+                         (smap
+                          (fn [[used# cached# free#]]
+                            (when (and used# cached# free#)
+                              (assoc used#
+                                :service "swap pct"
+                                :metric (-> (:metric  used#)
+                                            (/ (+ (:metric used#)
+                                                  (:metric cached#)
+                                                  (:metric free#)))
+                                            (* 100)))))
+                          ~@chidren)))))
 
 (defmacro cpu-stream
   [& children]
-  `(sdo
-    (where* (comp (partial = "cpu-average") :plugin_instance)
-            (by [:host]
-                (project* [(comp (partial = "user") :type_instance)
-                           (comp (partial = "system") :type_intance)
-                           (comp (partial = "softirq") :type_instance)
-                           (comp (partial = "interrupt") :type_instance)
-                           (comp (partial = "steal") :type_instance)
-                           (comp (partial = "wait") :type_instance)
-                           (comp (partial = "nice") :type_instance)]
-                          (combine folds/sum
-                                   (smap (fn [event#]
-                                           (assoc event# :service "cpu all"))
-                                         ~@children)))))))
+  `(where* (comp (partial = "cpu-average") :plugin_instance)
+           (by [:host]
+               (project* [(comp (partial = "user") :type_instance)
+                          (comp (partial = "system") :type_intance)
+                          (comp (partial = "softirq") :type_instance)
+                          (comp (partial = "interrupt") :type_instance)
+                          (comp (partial = "steal") :type_instance)
+                          (comp (partial = "wait") :type_instance)
+                          (comp (partial = "nice") :type_instance)]
+                         (smap (fn [events#]
+                                 (when-let [summed# (folds/sum events#)]
+                                   (assoc summed# "cpu all")))
+                               ~@children)))))
 
 (defmacro jmx-memory-stream
   [& children]
-  `(sdo
-    (where* (fn [event#]
-              (re-find #"^GenericJMX-(.*)\.memory" (:service event#)))
-            (adjust [:service s/replace #"GenericJMX-(.*)\.memory.*$" "$1"]
-                    (by [:host :plugin_instance]
-                        (project* [(comp (partial = "nonheapused")
-                                         :type_instance)
-                                   (comp (partial = "nonheapmax")
-                                         :type_instance)]
-                                  (combine
-                                   (fn [[used# max#]]
-                                     (assoc used#
-                                       :metric (-> (:metric used#)
-                                                   (/ (:metric max#))
-                                                   (* 100))))
-                                   (adjust [:service str " nonheap mem pct"]
-                                           ~@children)))
-                        (project* [(comp (partial = "heapused") :type_instance)
-                                   (comp (partial = "heapmax") :type_instance)]
-                                  (combine
-                                   (fn [[used# max#]]
-                                     (assoc used#
-                                       :metric (-> (:metric used#)
-                                                   (/ (:metric max#))
-                                                   (* 100))))
-                                   (adjust [:service str " heap mem pct"]
-                                           ~@children))))))))
+  `(where* (fn [event#]
+             (re-find #"^GenericJMX-(.*)\.memory" (:service event#)))
+           (smap (fn [{:keys [service] :as event}]
+                   (assoc event :service
+                          (s/replace service #"GenericJMX-(.*)\.memory.*$" "$1")))
+                 (by [:host :plugin_instance]
+                     (project* [(comp (partial = "nonheapused")
+                                      :type_instance)
+                                (comp (partial = "nonheapmax")
+                                      :type_instance)]
+                               (smap
+                                (fn [[used# max#]]
+                                  (when (and used# max#)
+                                    (assoc used#
+                                      :service (str (:service used#) " nonheap mem pct")
+                                      :metric (-> (:metric used#)
+                                                  (/ (:metric max#))
+                                                  (* 100)))))
+                                ~@children))
+                     (project* [(comp (partial = "heapused") :type_instance)
+                                (comp (partial = "heapmax") :type_instance)]
+                               (smap
+                                (fn [[used# max#]]
+                                  (when (and used# max#)
+                                    (assoc used#
+                                      :service (str (:service used#) " heap mem pct")
+                                      :metric (-> (:metric used#)
+                                                  (/ (:metric max#))
+                                                  (* 100)))))
+                                ~@children))))))
 
 (def rewrite-service
   (rewrite-service-with default-services))
