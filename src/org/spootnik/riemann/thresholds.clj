@@ -48,4 +48,4 @@
              :else                              "ok"))
           event)
         (catch Exception e
-          (info "threshold-check failed for " event))))))
+          (warn "threshold-check failed for " event))))))
