@@ -1,0 +1,4 @@
+{:plugin "str"
+ :title  "Exposes string manipulation functions"
+ :git-repo "https://github.com/pyr/riemann-extra"
+ :require clojure.string}

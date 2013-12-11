@@ -1,0 +1,4 @@
+{:plugin "thresholds"
+ :title  "A plugin handling thresholds on metrics"
+ :git-repo "https://github.com/pyr/riemann-extra"
+ :require org.spootnik.riemann.thresholds}

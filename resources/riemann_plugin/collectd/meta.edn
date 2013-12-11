@@ -1,0 +1,4 @@
+{:plugin "collectd"
+ :title  "A plugin for massaging metrics coming from collectd"
+ :git-repo "https://github.com/pyr/riemann-extra"
+ :require org.spootnik.riemann.collectd}

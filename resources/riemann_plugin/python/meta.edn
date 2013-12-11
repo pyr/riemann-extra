@@ -1,0 +1,4 @@
+{:plugin "python"
+ :title  "A plugin for handling points coming from python functions"
+ :git-repo "https://github.com/pyr/riemann-extra"
+ :require org.spootnik.riemann.python}
