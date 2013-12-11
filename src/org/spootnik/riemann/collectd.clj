@@ -44,7 +44,9 @@
 
 (defmacro df-stream
   [& children]
-  `(where* (comp (partial = "df") :plugin)
+  `(where* (fn [{:keys [plugin# state#]}]
+             (and (= "df" plugin#)
+                  (not= "expired" state#)))
            (by [:host :plugin_instance]
                (project* [(comp (partial = "used") :type_instance)
                           (comp (partial = "free") :type_instance)]
@@ -66,7 +68,9 @@
 
 (defmacro mem-stream
   [& children]
-  `(where* (comp (partial = "memory") :plugin)
+  `(where* (fn [{:keys [plugin# state#]}]
+             (and (= "memory" plugin#)
+                  (not= "expired" state#)))
            (by [:host]
                (project* [(comp (partial = "used") :type_instance)
                           (comp (partial = "cached") :type_instance)
@@ -91,7 +95,9 @@
 
 (defmacro swap-stream
   [& children]
-  `(where* (comp (partial = "swap") :plugin)
+  `(where* (fn [{:keys [plugin# state#]}]
+             (and (= "swap" plugin#)
+                  (not= "expired" state#)))
            (by [:host]
                (project* [(comp (partial = "used") :type_instance)
                           (comp (partial = "cached") :type_instance)
@@ -114,7 +120,9 @@
 
 (defmacro cpu-stream
   [& children]
-  `(where* (comp (partial = "cpu-average") :plugin_instance)
+  `(where* (fn [{:keys [plugin_instance# state#]}]
+             (and (= "cpu-average" plugin_instance#)
+                  (not= "expired" state#)))
            (by [:host]
                (project* [(comp (partial = "user") :type_instance)
                           (comp (partial = "system") :type_intance)
@@ -131,7 +139,8 @@
 (defmacro jmx-memory-stream
   [& children]
   `(where* (fn [event#]
-             (re-find #"^GenericJMX-(.*)\.memory" (:service event#)))
+             (and (not= (:state event#) "expired")
+                  (re-find #"^GenericJMX-(.*)\.memory" (:service event#))))
            (smap (fn [{:keys [service#] :as event#}]
                    (assoc event# :service
                           (s/replace service# #"GenericJMX-(.*)\.memory.*$" "$1")))
