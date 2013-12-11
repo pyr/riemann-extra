@@ -1,7 +1,8 @@
 (ns org.spootnik.riemann.collectd
   "Helper functions to work with input from collectd"
-  (:require [riemann.streams :refer [tagged sdo project* where* by smap]]
-            [clojure.string  :as s]))
+  (:require [riemann.streams       :refer [tagged sdo project* where* by smap]]
+            [clojure.tools.logging :refer [error info]]
+            [clojure.string        :as s]))
 
 (def default-services
   [{:service "conntrack/conntrack" :rewrite "conntrack"}
@@ -50,13 +51,17 @@
                          (smap
                           (fn [[used# free#]]
                             (when (and used# free#)
-                              (assoc used#
-                                :service (format "df %s pct"
-                                                 (:plugin_instance used#))
-                                :metric (-> (:metric  used#)
-                                            (/ (+ (:metric used#)
-                                                  (:metric free#)))
-                                            (* 100)))))
+                              (try
+                                (assoc used#
+                                  :service (format "df %s pct"
+                                                   (:plugin_instance used#))
+                                  :metric (-> (:metric  used#)
+                                              (/ (+ (:metric used#)
+                                                    (:metric free#)))
+                                              (* 100)))
+                                (catch Exception e
+                                  (error e "cannot compute df pct for " used# free#)
+                                  nil))))
                           ~@children)))))
 
 (defmacro mem-stream
@@ -70,14 +75,18 @@
                          (smap
                           (fn [[used# cached# buf# free#]]
                             (when (and used# cached# buf# free#)
-                              (assoc used#
-                                :service "mem pct"
-                                :metric (-> (:metric  used#)
-                                            (/ (+ (:metric used#)
-                                                  (:metric cached#)
-                                                  (:metric buf#)
-                                                  (:metric free#)))
-                                            (* 100)))))
+                              (try
+                                (assoc used#
+                                  :service "mem pct"
+                                  :metric (-> (:metric  used#)
+                                              (/ (+ (:metric used#)
+                                                    (:metric cached#)
+                                                    (:metric buf#)
+                                                    (:metric free#)))
+                                              (* 100)))
+                                (catch Exception e
+                                  (error e "cannot compute mem pct for " used# cached# buf# free#)
+                                  nil))))
                           ~@children)))))
 
 (defmacro swap-stream
@@ -90,13 +99,17 @@
                          (smap
                           (fn [[used# cached# free#]]
                             (when (and used# cached# free#)
-                              (assoc used#
-                                :service "swap pct"
-                                :metric (-> (:metric  used#)
-                                            (/ (+ (:metric used#)
-                                                  (:metric cached#)
-                                                  (:metric free#)))
-                                            (* 100)))))
+                              (try
+                                (assoc used#
+                                  :service "swap pct"
+                                  :metric (-> (:metric  used#)
+                                              (/ (+ (:metric used#)
+                                                    (:metric cached#)
+                                                    (:metric free#)))
+                                              (* 100)))
+                                (catch Exception e
+                                  (error e "cannot compute swap pct for " used# cached# free#)
+                                  nil))))
                           ~@children)))))
 
 (defmacro cpu-stream
@@ -130,22 +143,30 @@
                                (smap
                                 (fn [[used# max#]]
                                   (when (and used# max#)
-                                    (assoc used#
-                                      :service (str (:service used#) " nonheap mem pct")
-                                      :metric (-> (:metric used#)
-                                                  (/ (:metric max#))
-                                                  (* 100)))))
+                                    (try
+                                      (assoc used#
+                                        :service (str (:service used#) " nonheap mem pct")
+                                        :metric (-> (:metric used#)
+                                                    (/ (:metric max#))
+                                                    (* 100)))
+                                      (catch Exception e
+                                        (error e "cannot compute nonheap mem pct for " used# max#)
+                                        nil))))
                                 ~@children))
                      (project* [(comp (partial = "heapused") :type_instance)
                                 (comp (partial = "heapmax") :type_instance)]
                                (smap
                                 (fn [[used# max#]]
                                   (when (and used# max#)
-                                    (assoc used#
-                                      :service (str (:service used#) " heap mem pct")
-                                      :metric (-> (:metric used#)
-                                                  (/ (:metric max#))
-                                                  (* 100)))))
+                                    (try
+                                      (assoc used#
+                                        :service (str (:service used#) " heap mem pct")
+                                        :metric (-> (:metric used#)
+                                                    (/ (:metric max#))
+                                                    (* 100)))
+                                      (catch Exception e
+                                        (error e "cannot compute heap mem pct for " used# max#)
+                                        nil))))
                                 ~@children))))))
 
 (def rewrite-service
