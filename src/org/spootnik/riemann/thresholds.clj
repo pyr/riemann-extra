@@ -1,7 +1,8 @@
 (ns org.spootnik.riemann.thresholds
  "A common riemann use case: changing event states based
   on threshold lookups"
- (:require [clojure.set :refer [union]]))
+ (:require [clojure.set           :refer [union]]
+           [clojure.tools.logging :refer [warn]]))
 
 (defn find-specific-threshold
   [{:keys [host tags]}
@@ -32,16 +33,19 @@
   [thresholds]
   (let [re-patterns (filter (complement (comp string? key)) thresholds)]
     (fn [{:keys [metric tags] :as event}]
-      (if-let [{:keys [warning critical invert exact add-tags]}
-               (if metric (find-threshold thresholds re-patterns event))]
-        (assoc event
-          :tags (union (set tags) (set add-tags))
-          :state
-          (cond
-           (nil? metric)                       "unknown"
-           (and exact (not= (double metric) (double exact))) "critical"
-           (and exact (= (double metric) (double exact)))    "ok"
-           ((if invert <= >) metric critical) "critical"
-           ((if invert <= >) metric warning)  "warning"
-           :else                              "ok"))
-        event))))
+      (try
+        (if-let [{:keys [warning critical invert exact add-tags]}
+                 (if metric (find-threshold thresholds re-patterns event))]
+          (assoc event
+            :tags (union (set tags) (set add-tags))
+            :state
+            (cond
+             (nil? metric)                       "unknown"
+             (and exact (not= (double metric) (double exact))) "critical"
+             (and exact (= (double metric) (double exact)))    "ok"
+             ((if invert <= >) metric critical) "critical"
+             ((if invert <= >) metric warning)  "warning"
+             :else                              "ok"))
+          event)
+        (catch Exception e
+          (info "threshold-check failed for " event))))))
