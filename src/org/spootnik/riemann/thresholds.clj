@@ -31,7 +31,7 @@
 
    The output function does not process events with no metrics"
   [thresholds]
-  (let [re-patterns (filter (complement (comp string? key)) thresholds)]
+  (let [re-patterns (remove (comp string? key) thresholds)]
     (fn [{:keys [metric tags] :as event}]
       (try
         (if metric
