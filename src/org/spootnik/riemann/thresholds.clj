@@ -34,11 +34,10 @@
   (let [re-patterns (remove (comp string? key) thresholds)]
     (fn [{:keys [metric tags] :as event}]
       (try
-        (if metric
-          (let [{:keys [warning reverse-warning critical
-                        reverse-critical invert exact add-tags]}
-                (find-threshold thresholds re-patterns event)
-                op (if invert <= >)]
+        (if-let [{:keys [warning reverse-warning critical
+                         reverse-critical invert exact add-tags]}
+                 (if metric (find-threshold thresholds re-patterns event))]
+          (let [op (if invert <= >)]
             (assoc event
               :tags (union (set tags) (set add-tags))
               :state
