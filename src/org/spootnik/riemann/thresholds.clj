@@ -31,21 +31,25 @@
 
    The output function does not process events with no metrics"
   [thresholds]
-  (let [re-patterns (filter (complement (comp string? key)) thresholds)]
+  (let [re-patterns (remove (comp string? key) thresholds)]
     (fn [{:keys [metric tags] :as event}]
       (try
-        (if-let [{:keys [warning critical invert exact add-tags]}
+        (if-let [{:keys [warning reverse-warning critical
+                         reverse-critical invert exact add-tags]}
                  (if metric (find-threshold thresholds re-patterns event))]
-          (assoc event
-            :tags (union (set tags) (set add-tags))
-            :state
-            (cond
-             (nil? metric)                       "unknown"
-             (and exact (not= (double metric) (double exact))) "critical"
-             (and exact (= (double metric) (double exact)))    "ok"
-             (and critical ((if invert <= >) metric critical)) "critical"
-             (and warning ((if invert <= >) metric warning))  "warning"
-             :else                              "ok"))
+          (let [op (if invert <= >)]
+            (assoc event
+              :tags (union (set tags) (set add-tags))
+              :state
+              (cond
+                (nil? metric) "unknown"
+                (and exact (not= (double metric) (double exact))) "critical"
+                (and exact (= (double metric) (double exact))) "ok"
+                (or (and critical (op metric critical))
+                    (and reverse-critical (op reverse-critical metric))) "critical"
+                (or (and warning (op metric warning))
+                    (and reverse-warning (op reverse-warning metric))) "warning"
+                :else "ok")))
           event)
         (catch Exception e
           (error e "threshold-check failed for " event))))))
