@@ -6,21 +6,10 @@
 
 (def default-services
   [{:service "conntrack/conntrack" :rewrite "conntrack"}
-   {:service "load/load/shortterm" :rewrite "load-shorterm"}
-   {:service "load/load/midterm" :rewrite "load-midterm"}
-   {:service "load/load/longterm" :rewrite "load-longterm"}
-   
-   {:service "swap/swap-used" :rewrite "swap used"}
-   {:service "swap/swap-free" :rewrite "swap free"}
-   {:service "swap/swap-cached" :rewrite "swap cached"}
-   {:service "swap/swap_io-in" :rewrite "swap io in"}
-   {:service "swap/swap_io-out" :rewrite "swap io out"}
-
-   {:service "memory/memory-used" :rewrite "mem used"}
-   {:service "memory/memory-free" :rewrite "mem free"}
-   {:service "memory/memory-buffered" :rewrite "mem buffered"}
-   {:service "memory/memory-cached" :rewrite "mem cached"}
-
+   {:service #"^load/load/(.*)$" :rewrite "load $1"}
+   {:service #"^swap/swap-(.*)$" :rewrite "swap $1"}
+   {:service #"^swap/swap_(.*)-(.*)$" :rewrite "swap $1 $2"}
+   {:service #"^memory/memory-(.*)$" :rewrite "mem $1"}
    {:service #"^cpu-([0-9]+)/cpu-(.*)$" :rewrite "cpu-$1 $2"}
    {:service #"^aggregation-cpu-average/cpu-(.*)$" :rewrite "cpu $1"}
    {:service #"^df-(.*)/df_complex-(.*)$" :rewrite "df $1 $2"}
