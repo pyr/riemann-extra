@@ -11,7 +11,7 @@ Run `lein uberjar` in the project's directory
 ## Configuration
 
 Starting with riemann 0.2.2, you can just provide a link to this jar in
-`/etc/default/riemann`, like so: 
+`/etc/default/riemann` (or in `/etc/sysconfig/riemann`), like so: 
 
 ```
 EXTRA_CLASSPATH=/path/to/riemann-extra.jar
